@@ -6,24 +6,29 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 const markers = {};
 var pickupMarker, dropMarker, cabMarker, mainRoadMeetingPoint;
+var initialPickupPoint = null;
+var cabMeetingPoint = null;
+var isCabArrived = false; // To track if cab and user are at the same location
+
 const customIcon = L.icon({
     iconUrl: './img/onee.svg',  // Replace with the path to your icon image
     iconSize: [40, 40], // Size of the icon
-    iconAnchor: [30, 10], // Point of the icon which will correspond to marker's location
-    popupAnchor: [0, -40] // Point from which the popup should open relative to the iconAnchor
+    iconAnchor: [20, 10], // Point of the icon which will correspond to marker's location
+    popupAnchor: [0, -10] // Point from which the popup should open relative to the iconAnchor
 });
-// Function to calculate distance between two coordinates
-// function calculateDistance(lat1, lon1, lat2, lon2) {
-//     const R = 6371; // Radius of the Earth in km
-//     const dLat = (lat2 - lat1) * Math.PI / 180;
-//     const dLon = (lon2 - lon1) * Math.PI / 180;
-//     const a = 
-//         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-//         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-//         Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-//     return R * c; // Distance in km
-// }
+
+// Haversine formula to calculate distance in meters
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Radius of the Earth in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in meters
+}
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
@@ -40,8 +45,7 @@ if (navigator.geolocation) {
             maximumAge: 0,
         }
     );
-}
-console.log("Hello");
+};
 
 socket.on("receive-location", (data) => {
     const { id, latitude, longitude } = data;
@@ -60,10 +64,24 @@ socket.on("receive-location", (data) => {
         // Update cab marker with custom icon
         markers[cabId].setLatLng([latitude, longitude,{icon: "download.jpeg"}]); // Update cab marker position
         markers[cabId].setIcon(customIcon).bindPopup("Cab Location"); // Set custom icon for the cab marker
-    } else{
+    } 
+    if (!isCabArrived && userLocation.equals(cabLocation)) {
+        isCabArrived = true;
+        cabMeetingPoint = cabLocation; // Store cab meeting point
+        
+        // Calculate the distance between initial pickup and cab meeting point
+        const distancee = calculateDistance(
+            initialPickupPoint.lat, initialPickupPoint.lng,
+            cabMeetingPoint.lat, cabMeetingPoint.lng
+        );
+        const distance = initialPickupPoint.distanceTo(cabMeetingPoint); // Distance in meters
 
+
+        // Display the distance to the user
+        alert(`You walked ${distance.toFixed(2)} meters to meet the cab!`);
+        
+        alert(`You walked ${distancee.toFixed(2)} meters to meet the cab!`);
     }
-    
 });
 
 
