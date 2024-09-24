@@ -41,6 +41,7 @@ if (navigator.geolocation) {
         }
     );
 }
+console.log("Hello");
 
 socket.on("receive-location", (data) => {
     const { id, latitude, longitude } = data;
